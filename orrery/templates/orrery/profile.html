@@ -1,0 +1,41 @@
+{% extends 'orrery/base.html' %}
+
+{% load static %}
+
+{% block title %}Profile - NeoOrrery{% endblock %}
+
+{% block content %}
+<div class="profile-page container mt-4">
+    <h2>My Profile</h2>
+
+    <!-- Profile Picture -->
+    <div class="profile-picture mb-3">
+        {% if user.userprofile.profile_picture %}
+        <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile Picture" class="img-thumbnail profile-pic">
+        {% else %}
+        <img src="{% static 'orrery/img/default.jpg' %}" alt="Default Profile Picture"
+            class="img-thumbnail profile-pic">
+        {% endif %}
+    </div>
+
+    <!-- User Details -->
+    <div class="profile-details mb-4">
+        <p><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Close Approaches Alert Subscription:</strong>
+            {% if user.userprofile.is_opted_in %}
+            <span class="badge bg-success">Subscribed</span>
+            {% else %}
+            <span class="badge bg-danger">Not Subscribed</span>
+            {% endif %}
+        </p>
+        <p><strong>Your Points:</strong> {{ user.userprofile.points }}</p>
+        <p><strong>Your Rank:</strong> <span class="badge bg-info">{{ user.userprofile.get_rank }}</span></p>
+    </div>
+
+    <!-- Subscription & Edit Profile Buttons -->
+    <div class="profile-actions">
+        <a href="{% url 'edit_profile' %}" class="btn btn-primary">Edit Profile</a>
+    </div>
+</div>
+{% endblock %}

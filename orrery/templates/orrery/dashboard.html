@@ -1,0 +1,452 @@
+{% extends 'orrery/base.html' %}
+{% load static %}
+
+{% block title %}NeoOrrery Dashboard{% endblock %}
+
+{% block content %}
+<!-- Hidden fields to store data for JavaScript -->
+<span id="totalPlanets" style="display:none;">{{ total_planets }}</span>
+<span id="totalAsteroids" style="display:none;">{{ total_asteroids }}</span>
+<span id="totalPHA" style="display:none;">{{ total_pha }}</span>
+<span id="totalComets" style="display:none;">{{ total_comets }}</span>
+
+<!-- Greeting -->
+<div class="greeting">
+    <h3>Hello Welcome to Asteroid Watcher! </h3>
+    {% if not user.is_authenticated %}
+    <a href="{% url 'signup' %}" class="btn btn-primary">Create Account</a>
+    {% else %}
+    <!-- Close Approaches Alert Subscription Form -->
+    {% endif %}
+</div>
+
+<!-- Dashboard Cards -->
+<div class="dashboard-cards">
+    <div class="card">
+        <h4>Total Celestial Bodies</h4>
+        <h2>{{ total_celestial_bodies }}</h2>
+        {% if total_celestial_bodies_change %}
+        <p class="{% if total_celestial_bodies_change > 0 %}up{% else %}down{% endif %}">
+            {{ total_celestial_bodies_change }}%
+        </p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h4>Planets</h4>
+        <h2>{{ total_planets }}</h2>
+        {% if planets_change %}
+        <p class="{% if planets_change > 0 %}up{% else %}down{% endif %}">
+            {{ planets_change }}%
+        </p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h4>Asteroids</h4>
+        <h2>{{ total_asteroids }}</h2>
+        {% if asteroids_change %}
+        <p class="{% if asteroids_change > 0 %}up{% else %}down{% endif %}">
+            {{ asteroids_change }}%
+        </p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h4>Potentially Hazardous Asteroids (PHA)</h4>
+        <h2>{{ total_pha }}</h2>
+        {% if pha_change %}
+        <p class="{% if pha_change > 0 %}up{% else %}down{% endif %}">
+            {{ pha_change }}%
+        </p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h4>Comets</h4>
+        <h2>{{ total_comets }}</h2>
+        {% if comets_change %}
+        <p class="{% if comets_change > 0 %}up{% else %}down{% endif %}">
+            {{ comets_change }}%
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Statistics, Real-Time Approaches, and Critical Approaches Section -->
+<div class="statistics-section">
+    <!-- Left: Statistics (Pie Chart) -->
+    <div class="box left-box">
+        <h3>Statistics</h3>
+        <canvas id="celestial-body-chart" width="300" height="300"></canvas>
+    </div>
+
+    <!-- Center: Real-Time Close Approaches -->
+    <div class="box center-box">
+        <h3>Real-Time Close Approaches</h3>
+        <table class="celestial-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Distance (km)</th>
+                    <th>Velocity (km/h)</th>
+                    <th>Approach Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for approach in close_approaches %}
+                <tr>
+                    <td>{{ approach.name }}</td>
+                    <td>{{ approach.distance|floatformat:0 }}</td>
+                    <td>{{ approach.velocity|floatformat:0 }}</td>
+                    <td>{{ approach.approach_date }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">No close approaches found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Right: Critical Close Approaches -->
+    <div class="box right-box">
+        <h3>Critical Close Approaches</h3>
+        <table class="celestial-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Distance (km)</th>
+                    <th>Velocity (km/h)</th>
+                    <th>Approach Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for approach in critical_approaches %}
+                <tr>
+                    <td>{{ approach.name }}</td>
+                    <td>{{ approach.distance|floatformat:0 }}</td>
+                    <td>{{ approach.velocity|floatformat:0 }}</td>
+                    <td>{{ approach.approach_date }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">No critical close approaches found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<h3 class="celestial-database-heading">NASA Eyes on Asteroids</h3>
+<!-- NASA Eyes on Asteroids Iframe -->
+<div class="nasa-eyes-container">
+    <iframe src="https://eyes.nasa.gov/apps/asteroids/#/home" width="100%" height="600" style="border:none;"></iframe>
+</div>
+
+<!-- Probability Prediction Section (Full Width) -->
+<div class="statistics-section mt-4" style="grid-template-columns: 1fr;">
+    <div class="box">
+        <h3>Probability Prediction</h3>
+        <div class="prediction-controls mb-3"
+            style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+            <div style="display: flex; gap: 10px; align-items: center; width: 100%; justify-content: center;">
+                <label for="predictSize" style="min-width: 120px;">Size (meters):</label>
+                <input type="number" id="predictSize" value="400" step="10" class="form-control"
+                    style="width: 120px; padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; width: 100%; justify-content: center;">
+                <label for="predictDistance" style="min-width: 120px;">Distance (km):</label>
+                <input type="number" id="predictDistance" value="900000" step="10000" class="form-control"
+                    style="width: 120px; padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+            </div>
+        </div>
+        <div style="position: relative; height: 350px;">
+            <canvas id="probability-chart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Visualizations Section -->
+<div class="statistics-section mt-4">
+    <!-- Histogram of Celestial Data -->
+    <div class="box">
+        <h3>Histogram of Celestial Data</h3>
+        <div class="axis-controls mb-3" style="display: flex; justify-content: center; gap: 10px; align-items: center;">
+            <label for="histXAxis">Data Field:</label>
+            <select id="histXAxis" class="form-select" style="width: auto; padding: 5px; border-radius: 4px;">
+                <option value="size">Size (meters)</option>
+                <option value="distance">Distance from Earth (km)</option>
+                <option value="eccentricity">Eccentricity</option>
+                <option value="inclination">Inclination (deg)</option>
+            </select>
+        </div>
+        <div style="position: relative; height: 300px;">
+            <canvas id="size-histogram"></canvas>
+        </div>
+    </div>
+    <div class="box">
+        <h3>Scatter Plot Analysis</h3>
+        <div class="axis-controls mb-3" style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <label for="scatterXAxis">X-Axis:</label>
+                <select id="scatterXAxis" class="form-select" style="width: auto; padding: 5px; border-radius: 4px;">
+                    <option value="size" selected>Size (meters)</option>
+                    <option value="distance">Distance from Earth (km)</option>
+                    <option value="eccentricity">Eccentricity</option>
+                    <option value="inclination">Inclination (deg)</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <label for="scatterYAxis">Y-Axis:</label>
+                <select id="scatterYAxis" class="form-select" style="width: auto; padding: 5px; border-radius: 4px;">
+                    <option value="size">Size (meters)</option>
+                    <option value="distance" selected>Distance from Earth (km)</option>
+                    <option value="eccentricity">Eccentricity</option>
+                    <option value="inclination">Inclination (deg)</option>
+                </select>
+            </div>
+        </div>
+        <div style="position: relative; height: 300px;">
+            <canvas id="size-distance-scatter"></canvas>
+        </div>
+    </div>
+</div>
+
+<script id="celestial-bodies-raw-data" type="application/json">
+    [
+        {% for body in celestial_bodies %}
+        {
+            "name": "{{ body.name|escapejs }}",
+            "size": {{ body.size|default:0 }},
+            "distance": {{ body.distance|default:0 }},
+            "eccentricity": {{ body.eccentricity|default:0 }},
+            "inclination": {{ body.inclination|default:0 }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const rawData = JSON.parse(document.getElementById('celestial-bodies-raw-data').textContent);
+        const labelsMap = {
+            'size': 'Size (meters)',
+            'distance': 'Distance (km)',
+            'eccentricity': 'Eccentricity',
+            'inclination': 'Inclination (deg)'
+        };
+
+        const predictSizeInput = document.getElementById('predictSize');
+        const predictDistanceInput = document.getElementById('predictDistance');
+        let histChart, scatterChart, probabilityChart;
+
+        function updatePrediction() {
+            const size = parseFloat(predictSizeInput.value) || 0;
+            const distance = parseFloat(predictDistanceInput.value) || 0;
+
+            const s = size / 1000;
+            const d = distance / 1000000;
+
+            const weights = [
+                [0.0, 0.0],    // Asteroid
+                [1.0, 1.0],    // Comet
+                [-2.0, -1.0],  // Meteor
+                [5.0, 2.0],    // Planet
+                [-1.0, -3.0]   // PHA
+            ];
+            const biases = [3.4, 1.7, 4.0, -8.4, 6.8];
+
+            const logits = weights.map((w, i) => w[0] * s + w[1] * d + biases[i]);
+            const exps = logits.map(z => Math.exp(z));
+            const sumExps = exps.reduce((a, b) => a + b, 0);
+            const probs = exps.map(e => (e / sumExps) * 100);
+
+            const data = {
+                labels: ['Asteroid', 'Comet', 'Meteor', 'Planet', 'PHA'],
+                datasets: [{
+                    data: probs.map(p => p.toFixed(2)),
+                    backgroundColor: ['#003049', '#d62828', '#f77f00', '#2a9d8f', '#fcbf49'],
+                    hoverOffset: 10
+                }]
+            };
+
+            if (probabilityChart) {
+                probabilityChart.data = data;
+                probabilityChart.update();
+            } else {
+                const ctx = document.getElementById('probability-chart').getContext('2d');
+                probabilityChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `${context.label}: ${context.raw}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateHistogram() {
+            const field = document.getElementById('histXAxis').value;
+            const values = rawData.map(d => d[field]).filter(v => v !== null && v !== undefined && v !== 0);
+
+            if (histChart) histChart.destroy();
+
+            if (values.length === 0) return;
+
+            const minVal = Math.min(...values);
+            const maxVal = Math.max(...values);
+            const numBins = 10;
+            const binSize = (maxVal - minVal) / numBins;
+            const bins = Array(numBins).fill(0);
+            const labels = [];
+
+            for (let i = 0; i < numBins; i++) {
+                const low = minVal + i * binSize;
+                const high = minVal + (i + 1) * binSize;
+                labels.push(`${Math.round(low * 100) / 100}-${Math.round(high * 100) / 100}`);
+                values.forEach(v => {
+                    if (v >= low && (i === numBins - 1 ? v <= high : v < high)) bins[i]++;
+                });
+            }
+
+            const ctx = document.getElementById('size-histogram').getContext('2d');
+            histChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `Frequency of ${labelsMap[field]}`,
+                        data: bins,
+                        backgroundColor: '#1f3a93',
+                        borderColor: '#14295a',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Frequency' } },
+                        x: { title: { display: true, text: labelsMap[field] } }
+                    }
+                }
+            });
+        }
+
+        function updateScatter() {
+            const xField = document.getElementById('scatterXAxis').value;
+            const yField = document.getElementById('scatterYAxis').value;
+
+            const scatterData = rawData
+                .filter(d => d[xField] !== 0 && d[yField] !== 0)
+                .map(d => ({ x: d[xField], y: d[yField], name: d.name }));
+
+            if (scatterChart) scatterChart.destroy();
+
+            const ctx = document.getElementById('size-distance-scatter').getContext('2d');
+            scatterChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Celestial Bodies',
+                        data: scatterData,
+                        backgroundColor: '#f5b041',
+                        pointRadius: 5,
+                        hoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { type: 'linear', position: 'bottom', title: { display: true, text: labelsMap[xField] } },
+                        y: { title: { display: true, text: labelsMap[yField] } }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const d = context.raw;
+                                    return `${d.name}: ${labelsMap[xField]}=${d.x}, ${labelsMap[yField]}=${d.y}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.getElementById('histXAxis').addEventListener('change', updateHistogram);
+        document.getElementById('scatterXAxis').addEventListener('change', updateScatter);
+        document.getElementById('scatterYAxis').addEventListener('change', updateScatter);
+        predictSizeInput.addEventListener('input', updatePrediction);
+        predictDistanceInput.addEventListener('input', updatePrediction);
+
+        updateHistogram();
+        updateScatter();
+        updatePrediction();
+    });
+</script>
+
+<!-- Pie Chart Script remains below this section -->
+
+<!-- Chart.js Script for Pie Chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const totalPlanets = parseFloat(document.getElementById('totalPlanets').textContent);
+        const totalAsteroids = parseFloat(document.getElementById('totalAsteroids').textContent);
+        const totalPHA = parseFloat(document.getElementById('totalPHA').textContent);
+        const totalComets = parseFloat(document.getElementById('totalComets').textContent);
+
+        const totalBodies = totalPlanets + totalAsteroids + totalPHA + totalComets;
+
+        if (totalBodies > 0) {
+            const ctx = document.getElementById('celestial-body-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Planets', 'Asteroids', 'PHA', 'Comets'],
+                    datasets: [{
+                        label: 'Celestial Bodies',
+                        data: [totalPlanets, totalAsteroids, totalPHA, totalComets],
+                        backgroundColor: ['#003049', '#d62828', '#f77f00', '#fcbf49'],
+                        hoverOffset: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    const total = context.dataset.data.reduce((sum, value) => sum + value, 0);
+                                    const value = context.raw;
+                                    label += value + ' (' + ((value / total) * 100).toFixed(2) + '%)';
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    animation: { animateScale: true, animateRotate: true }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

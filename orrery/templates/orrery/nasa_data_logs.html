@@ -1,0 +1,90 @@
+{% extends 'orrery/base.html' %}
+
+{% block title %}NASA Data Logs{% endblock %}
+
+{% block content %}
+<div class="nasa-logs-page container mt-4">
+    <h2>NASA Data Details</h2>
+
+    <div class="celestial-database-section mt-4">
+        <h3 class="mb-3">Celestial Bodies Database</h3>
+
+        <div class="search-filter-container mb-3" style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" id="dbSearch" placeholder="Search table data..." class="form-control"
+                style="max-width: 300px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <select id="dbFilter" class="form-select"
+                style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white;">
+                <option value="">All Bodies</option>
+                <option value="Planet">Planets</option>
+                <option value="Comet">Comets</option>
+                <option value="Asteroid">Asteroids</option>
+                <option value="PHA">PHA</option>
+            </select>
+        </div>
+
+        <table class="celestial-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Body Type</th>
+                    <th>Size (meters)</th>
+                    <th>Distance from Earth (km)</th>
+                    <th>Last Updated</th>
+                </tr>
+            </thead>
+            <tbody id="dbTableBody">
+                {% for body in celestial_bodies %}
+                <tr data-type="{{ body.get_body_type }}">
+                    <td>
+                        <a href="{% url 'body_detail' body.pk body.get_body_type %}">
+                            <strong>{{ body.name }}</strong>
+                        </a>
+                    </td>
+                    <td>{{ body.get_body_type }}</td>
+                    <td>{{ body.size|default:"N/A" }}</td>
+                    <td>{{ body.distance|default:"N/A" }}</td>
+                    <td>{{ body.last_updated|date:"Y-m-d" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center;">No data available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('dbSearch');
+        const filterSelect = document.getElementById('dbFilter');
+        const tableBody = document.getElementById('dbTableBody');
+        const rows = tableBody.getElementsByTagName('tr');
+
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filterValue = filterSelect.value.toLowerCase();
+
+            for (let row of rows) {
+                if (row.cells.length < 5) continue;
+
+                const name = row.cells[0].textContent.toLowerCase();
+                const bodyType = row.getAttribute('data-type').toLowerCase();
+
+                const matchesSearch = name.includes(searchTerm);
+                const matchesFilter = filterValue === "" || bodyType.includes(filterValue);
+
+                if (matchesSearch && matchesFilter) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            }
+        }
+
+        searchInput.addEventListener('input', filterTable);
+        filterSelect.addEventListener('change', filterTable);
+    });
+</script>
+{% endblock %}

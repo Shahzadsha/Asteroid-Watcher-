@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NeoOrrery{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'orrery/styles.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_head %}
+    {% endblock %}
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>🌌 Asteroid Watch!</h2>
+
+        <!-- Dynamic User Section -->
+        <div class="user-section">
+            {% if user.is_authenticated %}
+            <div class="profile-info">
+                <img src="{{ user.userprofile.profile_picture.url }}" alt="User Photo" class="profile-img">
+                <div class="user-info">
+                    <div class="username">{{ user.first_name }} {{ user.last_name }}</div>
+                    <div class="user-email">{{ user.email }}</div>
+                </div>
+            </div>
+            {% else %}
+            <div class="user-info">
+                <div class="username"></div>
+                <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
+                <a href="{% url 'signup' %}" class="btn btn-secondary">Signup</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar Menu -->
+        <ul class="sidebar-menu">
+            {% if user.is_authenticated %}
+            <li><a href="{% url 'dashboard' %}" class="dashboard-button">Dashboard</a></li>
+            <li><a href="{% url 'three_d_view' %}" class="model-view-button">3D Model View</a></li>
+            <li><a href="{% url 'export_bodies_csv' %}" class="export-button">Export CSV</a></li>
+            <li><a href="{% url 'profile' %}" class="profile-button">Profile</a></li>
+            <li><a href="{% url 'nasa_data_logs' %}" class="log-button">NASA Data Details</a></li>
+            <li><a href="{% url 'contribute' %}" class="contribute-button">Contribute</a></li>
+            <li><a href="{% url 'all_contributions' %}" class="all-contributions-button">All Contributions</a></li>
+            <li><a href="{% url 'my_contributions' %}" class="my-contributions-button">My Contributions</a></li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container" style="margin-left: 270px;">
+        <main class="main-content">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% block content %}
+            {% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; <span id="currentYear"></span> Team Amila M B. All Rights Reserved.</p>
+        </footer>
+    </div>
+
+    <script src="{% static 'orrery/scripts.js' %}"></script>
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+    {% block extra_js %}
+    {% endblock %}
+</body>
+
+</html>

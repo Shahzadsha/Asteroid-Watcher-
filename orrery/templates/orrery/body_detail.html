@@ -1,0 +1,12 @@
+{% extends 'orrery/base.html' %}
+
+{% block title %}{{ body.name }} - Details{% endblock %}
+
+{% block content %}
+    <h2>{{ body.name }} Details</h2>
+    <ul>
+        <li>Size: {{ body.size }} meters</li>
+        <li>Distance: {{ body.distance }} km</li>
+        <li>Last Updated: {{ body.last_updated|date:"Y-m-d" }}</li>
+    </ul>
+{% endblock %}

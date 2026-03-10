@@ -1,0 +1,33 @@
+{% extends 'orrery/base.html' %}
+
+{% block title %}My Contributions - NeoOrrery{% endblock %}
+
+{% block content %}
+<div class="contributions-container">
+    <h2>My Contributions</h2>
+
+    <div class="contributions-grid">
+        {% for contribution in contributions %}
+        <div class="contribution-tile">
+            <a href="{% url 'blog_detail' contribution.pk %}">
+                {% if contribution.thumbnail %}
+                <img src="{{ contribution.thumbnail.url }}" alt="Thumbnail" class="thumbnail" />
+                {% endif %}
+                <h4>{{ contribution.title }}</h4> <!-- Display the title -->
+                <p><strong>Submitted by:</strong> {{ contribution.author.username }}</p>
+                <p><strong>Submitted on:</strong> {{ contribution.time_of_submission|date:"F j, Y, g:i a" }}</p>
+                <p>{{ contribution.content|truncatewords:20 }}</p> <!-- Truncate content to 20 words -->
+            </a>
+            <form action="{% url 'delete_contribution' contribution.pk %}" method="post" style="margin-top: 10px;"
+                onsubmit="return confirm('Are you sure you want to delete this contribution?');">
+                {% csrf_token %}
+                <button type="submit" class="btn-delete"
+                    style="background-color: #d62828; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: 100%;">Delete</button>
+            </form>
+        </div>
+        {% empty %}
+        <p>No contributions found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

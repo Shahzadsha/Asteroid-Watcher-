@@ -1,0 +1,13 @@
+{% extends 'orrery/base.html' %}
+
+{% block title %}Asteroid Detail - {{ body.name }}{% endblock %}
+
+{% block content %}
+    <div class="detail-container">
+        <h2>Asteroid: {{ body.name }}</h2>
+        <p><strong>Size:</strong> {{ body.size|default:"N/A" }} meters</p>
+        <p><strong>Distance from Earth:</strong> {{ body.distance|default:"N/A" }} km</p>
+        <p><strong>Potential Hazard:</strong> {% if body.is_potentially_hazardous %}Yes{% else %}No{% endif %}</p>
+        <p><strong>Last Updated:</strong> {{ body.last_updated|date:"Y-m-d" }}</p>
+    </div>
+{% endblock %}

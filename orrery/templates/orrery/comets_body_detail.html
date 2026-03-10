@@ -1,0 +1,17 @@
+{% extends 'orrery/base.html' %}
+
+{% block title %}Comet Detail - {{ body.name }}{% endblock %}
+
+{% block content %}
+    <div class="detail-container">
+        <h2>Comet: {{ body.name }}</h2>
+        <p><strong>Orbital Period:</strong> {{ body.orbital_period }} years</p>
+        <p><strong>Size:</strong> {{ body.size|default:"N/A" }} meters</p>
+        <p><strong>Distance from Earth:</strong> {{ body.distance|default:"N/A" }} km</p>
+        <p><strong>Eccentricity:</strong> {{ body.eccentricity|default:"N/A" }}</p>
+        <p><strong>Inclination:</strong> {{ body.inclination|default:"N/A" }} degrees</p>
+        <p><strong>Argument of Periapsis:</strong> {{ body.argument_of_periapsis|default:"N/A" }} degrees</p>
+        <p><strong>Longitude of Ascending Node:</strong> {{ body.longitude_of_ascending_node|default:"N/A" }} degrees</p>
+        <p><strong>Last Updated:</strong> {{ body.last_updated|date:"Y-m-d" }}</p>
+    </div>
+{% endblock %}
