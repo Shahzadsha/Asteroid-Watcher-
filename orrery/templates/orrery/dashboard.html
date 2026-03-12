@@ -12,7 +12,7 @@
 
 <!-- Greeting -->
 <div class="greeting">
-    <h3>Hello Welcome to Asteroid Watcher! </h3>
+    <h3>Hello, Welcome to Asteroid Watch! </h3>
     {% if not user.is_authenticated %}
     <a href="{% url 'signup' %}" class="btn btn-primary">Create Account</a>
     {% else %}
@@ -146,22 +146,51 @@
 <div class="statistics-section mt-4" style="grid-template-columns: 1fr;">
     <div class="box">
         <h3>Probability Prediction</h3>
+
         <div class="prediction-controls mb-3"
             style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+
             <div style="display: flex; gap: 10px; align-items: center; width: 100%; justify-content: center;">
-                <label for="predictSize" style="min-width: 120px;">Size (meters):</label>
+                <label for="predictSize" style="min-width: 120px;">Size (km):</label>
                 <input type="number" id="predictSize" value="400" step="10" class="form-control"
                     style="width: 120px; padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
             </div>
+
             <div style="display: flex; gap: 10px; align-items: center; width: 100%; justify-content: center;">
                 <label for="predictDistance" style="min-width: 120px;">Distance (km):</label>
                 <input type="number" id="predictDistance" value="900000" step="10000" class="form-control"
                     style="width: 120px; padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
             </div>
         </div>
-        <div style="position: relative; height: 350px;">
-            <canvas id="probability-chart"></canvas>
+
+        <!-- Chart + Accuracy Layout -->
+        <div
+            style="display: flex; justify-content: center; align-items: center; position: relative; min-height: 400px; padding: 20px;">
+
+            <!-- Pie Chart -->
+            <div style="position: relative; height: 350px; width: 350px;">
+                <canvas id="probability-chart"></canvas>
+            </div>
+
+            <!-- Prediction Details (Far Right) -->
+            <div id="prediction-info"
+                style="position: absolute; right: 40px; text-align: right; background: rgba(255,255,255,0.9); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #eee;">
+                
+                <div id="individual-probs" style="font-size: 14px; color: #666; margin-bottom: 15px; line-height: 1.8; font-family: 'Courier New', Courier, monospace;">
+                    <div style="display: flex; justify-content: space-between; gap: 20px;"><span>Asteroid:</span> <span id="prob-Asteroid" style="font-weight: bold; color: #003049;">0%</span></div>
+                    <div style="display: flex; justify-content: space-between; gap: 20px;"><span>Comet:</span> <span id="prob-Comet" style="font-weight: bold; color: #d62828;">0%</span></div>
+                    <div style="display: flex; justify-content: space-between; gap: 20px;"><span>Meteor:</span> <span id="prob-Meteor" style="font-weight: bold; color: #f77f00;">0%</span></div>
+                    <div style="display: flex; justify-content: space-between; gap: 20px;"><span>Planet:</span> <span id="prob-Planet" style="font-weight: bold; color: #2a9d8f;">0%</span></div>
+                    <div style="display: flex; justify-content: space-between; gap: 20px;"><span>PHA:</span> <span id="prob-PHA" style="font-weight: bold; color: #fcbf49;">0%</span></div>
+                </div>
+
+                <div id="prediction-accuracy" style="font-size: 28px; font-weight: bold; color: #333; border-top: 2px solid #f0f0f0; padding-top: 10px;">
+                    Accuracy: <span id="accuracy-value">{% if model_accuracy_pct %}{{ model_accuracy_pct|floatformat:0 }}%{% else %}N/A{% endif %}</span>
+                </div>
+            </div>
+
         </div>
+
     </div>
 </div>
 
@@ -173,7 +202,7 @@
         <div class="axis-controls mb-3" style="display: flex; justify-content: center; gap: 10px; align-items: center;">
             <label for="histXAxis">Data Field:</label>
             <select id="histXAxis" class="form-select" style="width: auto; padding: 5px; border-radius: 4px;">
-                <option value="size">Size (meters)</option>
+                <option value="size">Size (km)</option>
                 <option value="distance">Distance from Earth (km)</option>
                 <option value="eccentricity">Eccentricity</option>
                 <option value="inclination">Inclination (deg)</option>
@@ -189,7 +218,7 @@
             <div style="display: flex; gap: 10px; align-items: center;">
                 <label for="scatterXAxis">X-Axis:</label>
                 <select id="scatterXAxis" class="form-select" style="width: auto; padding: 5px; border-radius: 4px;">
-                    <option value="size" selected>Size (meters)</option>
+                    <option value="size" selected>Size (km)</option>
                     <option value="distance">Distance from Earth (km)</option>
                     <option value="eccentricity">Eccentricity</option>
                     <option value="inclination">Inclination (deg)</option>
@@ -198,7 +227,7 @@
             <div style="display: flex; gap: 10px; align-items: center;">
                 <label for="scatterYAxis">Y-Axis:</label>
                 <select id="scatterYAxis" class="form-select" style="width: auto; padding: 5px; border-radius: 4px;">
-                    <option value="size">Size (meters)</option>
+                    <option value="size">Size (km)</option>
                     <option value="distance" selected>Distance from Earth (km)</option>
                     <option value="eccentricity">Eccentricity</option>
                     <option value="inclination">Inclination (deg)</option>
@@ -225,6 +254,10 @@
     ]
 </script>
 
+{% if model_params %}
+{{ model_params|json_script:"model-params-data" }}
+{% endif %}
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const rawData = JSON.parse(document.getElementById('celestial-bodies-raw-data').textContent);
@@ -246,19 +279,48 @@
             const s = size / 1000;
             const d = distance / 1000000;
 
-            const weights = [
+            let weights = [
                 [0.0, 0.0],    // Asteroid
                 [1.0, 1.0],    // Comet
                 [-2.0, -1.0],  // Meteor
                 [5.0, 2.0],    // Planet
                 [-1.0, -3.0]   // PHA
             ];
-            const biases = [3.4, 1.7, 4.0, -8.4, 6.8];
+            let biases = [3.4, 1.7, 4.0, -8.4, 6.8];
+
+            // Use trained parameters if available
+            const modelParamsScript = document.getElementById('model-params-data');
+            if (modelParamsScript) {
+                try {
+                    const modelParams = JSON.parse(modelParamsScript.textContent);
+                    if (modelParams && modelParams.weights && modelParams.biases) {
+                        weights = modelParams.weights;
+                        biases = modelParams.biases;
+                    }
+                } catch (e) {
+                    console.error("Error parsing model parameters:", e);
+                }
+            }
 
             const logits = weights.map((w, i) => w[0] * s + w[1] * d + biases[i]);
             const exps = logits.map(z => Math.exp(z));
             const sumExps = exps.reduce((a, b) => a + b, 0);
             const probs = exps.map(e => (e / sumExps) * 100);
+            
+            // Update individual probability text
+            ['Asteroid', 'Comet', 'Meteor', 'Planet', 'PHA'].forEach((label, i) => {
+                const span = document.getElementById(`prob-${label}`);
+                if (span) {
+                    span.textContent = probs[i].toFixed(1) + '%';
+                }
+            });
+
+            // Update the Accuracy label with the highest probability value
+            const maxProb = Math.max(...probs);
+            const accuracyValSpan = document.getElementById('accuracy-value');
+            if (accuracyValSpan) {
+                accuracyValSpan.textContent = maxProb.toFixed(0) + '%';
+            }
 
             const data = {
                 labels: ['Asteroid', 'Comet', 'Meteor', 'Planet', 'PHA'],

@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from orrery.models import UserProfile
 from orrery.utils.nasa_data import fetch_close_approaches
 from django.core.mail import send_mail
+from django.utils import timezone
 from datetime import datetime
 import smtplib
 import ssl  # Import the ssl module
@@ -42,7 +43,7 @@ class Command(BaseCommand):
                         critical_alert = True
 
                 # Prepare email content
-                subject = f"NeoOrrery Close Approaches Alert - {datetime.now().strftime('%d %B %Y')}"
+                subject = f"NeoOrrery Close Approaches Alert - {timezone.localtime(timezone.now()).strftime('%d %B %Y')}"
                 if user_close_approaches:
                     message = "The following celestial bodies are approaching Earth within your set ranges:\n\n"
                     for body in user_close_approaches:

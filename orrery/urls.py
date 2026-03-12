@@ -30,5 +30,6 @@ urlpatterns = [
     # My Contributions
     path('my-contributions/', views.my_contributions, name='my_contributions'),  # User's contributions
     path('delete-contribution/<int:pk>/', views.delete_contribution, name='delete_contribution'),  # Handles deletion
+    path('delete-comment/<int:pk>/', views.delete_comment, name='delete_comment'),  # Handles comment deletion
 ]
 

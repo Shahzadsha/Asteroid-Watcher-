@@ -1,14 +1,16 @@
 import requests
-from datetime import datetime, timedelta
+from datetime import timedelta
+from django.utils import timezone
 
 API_KEY = 'WabOZ3Suz7jQnDroucIZHduxXz0EuAWO96H2vt0e'
 
 def fetch_close_approaches(start_date=None, end_date=None, threshold_distance=100000, critical_distance=10000):
     """Fetches close approaches from NASA's API."""
+    now = timezone.localtime(timezone.now())
     if not start_date:
-        start_date = datetime.today().strftime('%Y-%m-%d')
+        start_date = now.strftime('%Y-%m-%d')
     if not end_date:
-        end_date = (datetime.today() + timedelta(days=7)).strftime('%Y-%m-%d')
+        end_date = (now + timedelta(days=7)).strftime('%Y-%m-%d')
 
     nasa_url = f'https://api.nasa.gov/neo/rest/v1/feed?start_date={start_date}&end_date={end_date}&api_key={API_KEY}'
 

@@ -1,4 +1,7 @@
 import csv
+import json
+import os
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -82,6 +85,16 @@ def dashboard(request):
             'celestial_bodies': celestial_bodies
         })
 
+    # Load model parameters for Probability Prediction
+    model_params = None
+    model_path = os.path.join(settings.BASE_DIR, 'orrery', 'data', 'model_params.json')
+    if os.path.exists(model_path):
+        try:
+            with open(model_path, 'r') as f:
+                model_params = json.load(f)
+        except Exception:
+            pass
+
     context = {
         'celestial_bodies': celestial_bodies,
         'total_celestial_bodies': total_celestial_bodies,
@@ -99,7 +112,9 @@ def dashboard(request):
         'sort_by': sort_by,
         'is_opted_in': is_opted_in,
         'close_approaches': close_approaches,
-        'critical_approaches': critical_approaches
+        'critical_approaches': critical_approaches,
+        'model_params': model_params,
+        'model_accuracy_pct': (model_params.get('accuracy', 0) * 100) if model_params and 'accuracy' in model_params else None
     }
 
     return render(request, 'orrery/dashboard.html', context)
@@ -380,3 +395,22 @@ def blog_detail(request, pk):
         'comments': comments,
         'comment_form': comment_form,
     })
+
+
+@login_required
+def delete_comment(request, pk):
+    """Handles the deletion of a comment."""
+    comment = get_object_or_404(Comment, pk=pk)
+
+    # Security check: Only the author of the comment or the author of the blog post can delete it
+    if comment.author != request.user and comment.blog_post.author != request.user:
+        messages.error(request, 'You do not have permission to delete this comment.')
+        return redirect('blog_detail', pk=comment.blog_post.pk)
+
+    if request.method == 'POST':
+        blog_post_pk = comment.blog_post.pk
+        comment.delete()
+        messages.success(request, 'Your comment has been deleted successfully!')
+        return redirect('blog_detail', pk=blog_post_pk)
+
+    return redirect('blog_detail', pk=comment.blog_post.pk)

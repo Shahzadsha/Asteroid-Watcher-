@@ -1,6 +1,7 @@
 import csv
 import requests
 from datetime import datetime, timedelta
+from django.utils import timezone
 from django.core.management.base import BaseCommand
 from orrery.models import Planet, Comet, Asteroid, CelestialBodyStats
 
@@ -24,7 +25,7 @@ class Command(BaseCommand):
 
         # Date range for NEO data (past to present)
         start_date = datetime(1995, 1, 1)
-        end_date = datetime.now()
+        end_date = timezone.localtime(timezone.now())
 
         # Fetch NEO data in 7-day increments
         self.fetch_neos(api_key, neo_url, start_date, end_date)
